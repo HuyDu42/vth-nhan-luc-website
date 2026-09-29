@@ -1,0 +1,8 @@
+{
+  "name": "VTH Nhân Lực - Cung Ứng Lao Động Toàn Diện",
+  "description": "Cổng thông tin và dịch vụ cung ứng nhân lực, cho thuê lại lao động, việc làm nhà máy, khu công nghiệp hàng đầu Việt Nam - vthnhanluc.com",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
