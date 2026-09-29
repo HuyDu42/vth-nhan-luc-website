@@ -145,6 +145,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   const [factoryImage, setFactoryImage] = useState('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop');
   const [factoryActive, setFactoryActive] = useState(true);
   const [factoryZalo, setFactoryZalo] = useState('https://zalo.me/0823166683');
+  const [factoryBenefits, setFactoryBenefits] = useState('');
+  const [factoryRequirements, setFactoryRequirements] = useState('');
+  const [factoryJobDescription, setFactoryJobDescription] = useState('');
 
   // Office edit state
   const [newOffice, setNewOffice] = useState({ region: '', address: '', hotline: '0823 166 683' });
@@ -273,6 +276,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     setFactoryImage('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop');
     setFactoryActive(true);
     setFactoryZalo('https://zalo.me/0823166683');
+    setFactoryBenefits('Bao ăn 2-3 bữa miễn phí\nCó ký túc xá máy lạnh wifi miễn phí\nĐóng BHXH đầy đủ theo luật');
+    setFactoryRequirements('Nam/Nữ 18-45 tuổi, sức khỏe tốt\nCó CMND/CCCD gắn chip\nKhông yêu cầu kinh nghiệm');
+    setFactoryJobDescription('Lắp ráp, kiểm tra ngoại quan sản phẩm\nĐóng gói thành phẩm vào thùng\nNgồi làm việc phòng máy lạnh mát mẻ');
     setIsAddingFactory(true);
   };
 
@@ -294,6 +300,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     setFactoryImage(f.image);
     setFactoryActive(f.active);
     setFactoryZalo(f.zaloUrl || 'https://zalo.me/0823166683');
+    setFactoryBenefits((f.benefits || []).join('\n'));
+    setFactoryRequirements((f.requirements || []).join('\n'));
+    setFactoryJobDescription((f.jobDescription || []).join('\n'));
     setIsAddingFactory(true);
   };
 
@@ -325,21 +334,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
       active: factoryActive,
       order: existing ? existing.order : factories.length + 1,
       zaloUrl: factoryZalo,
-      benefits: existing?.benefits || [
-        'Bao ăn 2-3 bữa miễn phí',
-        'Có ký túc xá máy lạnh wifi miễn phí',
-        'Đóng BHXH đầy đủ theo luật'
-      ],
-      requirements: existing?.requirements || [
-        'Nam/Nữ 18-45 tuổi, sức khỏe tốt',
-        'Có CMND/CCCD gắn chip',
-        'Không yêu cầu kinh nghiệm'
-      ],
-      jobDescription: existing?.jobDescription || [
-        'Lắp ráp, kiểm tra ngoại quan sản phẩm',
-        'Đóng gói thành phẩm vào thùng',
-        'Ngồi làm việc phòng máy lạnh mát mẻ'
-      ],
+      benefits: factoryBenefits.split('\n').map((s) => s.trim()).filter(Boolean),
+      requirements: factoryRequirements.split('\n').map((s) => s.trim()).filter(Boolean),
+      jobDescription: factoryJobDescription.split('\n').map((s) => s.trim()).filter(Boolean),
       postedDate: existing?.postedDate || new Date().toISOString().split('T')[0]
     };
 
@@ -922,6 +919,47 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                               value={factoryZalo}
                               onChange={(e) => setFactoryZalo(e.target.value)}
                               placeholder="https://zalo.me/0823166683"
+                              className="w-full p-2.5 rounded-xl border border-slate-300"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Phúc Lợi (mỗi dòng là 1 mục, xuống dòng cho mục tiếp theo):
+                            </label>
+                            <textarea
+                              value={factoryBenefits}
+                              onChange={(e) => setFactoryBenefits(e.target.value)}
+                              rows={4}
+                              placeholder={'Bao ăn 2-3 bữa miễn phí\nCó ký túc xá máy lạnh wifi miễn phí\nĐóng BHXH đầy đủ theo luật'}
+                              className="w-full p-2.5 rounded-xl border border-slate-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Yêu Cầu Ứng Viên (mỗi dòng là 1 mục):
+                            </label>
+                            <textarea
+                              value={factoryRequirements}
+                              onChange={(e) => setFactoryRequirements(e.target.value)}
+                              rows={4}
+                              placeholder={'Nam/Nữ 18-45 tuổi, sức khỏe tốt\nCó CMND/CCCD gắn chip\nKhông yêu cầu kinh nghiệm'}
+                              className="w-full p-2.5 rounded-xl border border-slate-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Mô Tả Công Việc (mỗi dòng là 1 mục):
+                            </label>
+                            <textarea
+                              value={factoryJobDescription}
+                              onChange={(e) => setFactoryJobDescription(e.target.value)}
+                              rows={4}
+                              placeholder={'Lắp ráp, kiểm tra ngoại quan sản phẩm\nĐóng gói thành phẩm vào thùng\nNgồi làm việc phòng máy lạnh mát mẻ'}
                               className="w-full p-2.5 rounded-xl border border-slate-300"
                             />
                           </div>
