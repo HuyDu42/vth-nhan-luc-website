@@ -10,6 +10,7 @@
 // Vercel/Netlify (khi triển khai thật) — xem hướng dẫn trong FIREBASE-SETUP.md
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -25,3 +26,7 @@ const app = initializeApp(firebaseConfig);
 // db dùng để đọc/ghi dữ liệu (nhà máy, tin tức, cài đặt, hồ sơ ứng tuyển...)
 // theo thời gian thực — mọi người truy cập website đều thấy cùng một dữ liệu.
 export const db = getFirestore(app);
+
+// auth dùng để đăng nhập Admin thật (email + mật khẩu tạo trong Firebase
+// Console > Authentication), thay cho mật khẩu viết cứng trong code trước đây.
+export const auth = getAuth(app);
