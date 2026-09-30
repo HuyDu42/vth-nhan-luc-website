@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
 import { 
   X, 
   Settings, 
@@ -64,7 +66,6 @@ interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
   isAuthenticated: boolean;
-  onAuthenticate: (status: boolean) => void;
   initialTab?: string;
   initialOpenAddFactory?: boolean;
   siteSettings: SiteSettings;
@@ -86,7 +87,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   isOpen,
   onClose,
   isAuthenticated,
-  onAuthenticate,
   initialTab = 'factories',
   initialOpenAddFactory = false,
   siteSettings,
@@ -103,8 +103,10 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   employerRequests,
   onDeleteEmployerRequest
 }) => {
+  const [loginEmail, setLoginEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('factories');
   const [saveSuccessNotice, setSaveSuccessNotice] = useState<string | null>(null);
 
@@ -249,12 +251,15 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === '123456' || password === 'admin' || password === 'vthnhanluc') {
-      onAuthenticate(true);
-      setAuthError(false);
-    } else {
-      setAuthError(true);
-    }
+    setAuthError(false);
+    setAuthLoading(true);
+    signInWithEmailAndPassword(auth, loginEmail.trim(), password)
+      .catch(() => {
+        setAuthError(true);
+      })
+      .finally(() => {
+        setAuthLoading(false);
+      });
   };
 
   // Factory Handlers
@@ -489,10 +494,18 @@ export const AdminModal: React.FC<AdminModalProps> = ({
             </div>
             <h3 className="text-2xl font-black text-slate-900">Đăng Nhập Quản Trị Viên</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Nhập mật khẩu để chỉnh sửa trực tiếp mọi thông số trên website (Mật khẩu mặc định: <strong className="text-slate-800 font-bold">123456</strong>)
+              Đăng nhập bằng tài khoản quản trị đã tạo trong Firebase Authentication.
             </p>
 
             <form onSubmit={handleLogin} className="space-y-3 pt-3">
+              <input
+                type="email"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="Email quản trị..."
+                className="w-full p-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-rose-500 focus:outline-none text-center font-bold"
+              />
               <input
                 type="password"
                 required
@@ -504,26 +517,16 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
               {authError && (
                 <div className="text-xs text-rose-600 font-bold">
-                  Mật khẩu không chính xác! Vui lòng thử lại.
+                  Email hoặc mật khẩu không chính xác! Vui lòng thử lại.
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm shadow-md transition"
+                disabled={authLoading}
+                className="w-full bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm shadow-md transition disabled:opacity-60"
               >
-                Mở Chế Độ Chỉnh Sửa Trực Tiếp
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onAuthenticate(true);
-                  setAuthError(false);
-                }}
-                className="w-full text-xs text-slate-500 hover:text-rose-600 underline py-1 transition"
-              >
-                Đăng nhập nhanh 1-chạm (Dành cho Quản trị viên)
+                {authLoading ? 'Đang đăng nhập...' : 'Mở Chế Độ Chỉnh Sửa Trực Tiếp'}
               </button>
             </form>
           </div>
