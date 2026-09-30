@@ -109,7 +109,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   const [authLoading, setAuthLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('factories');
   const [saveSuccessNotice, setSaveSuccessNotice] = useState<string | null>(null);
-  console.log('[DEBUG] AdminModal render. isAuthenticated =', isAuthenticated, 'isOpen =', isOpen);
 
   // Editable Site Settings clone
   const [editableSettings, setEditableSettings] = useState<SiteSettings>(siteSettings);
@@ -254,13 +253,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     e.preventDefault();
     setAuthError(false);
     setAuthLoading(true);
-    console.log('[DEBUG] Bắt đầu đăng nhập với email:', loginEmail.trim());
     signInWithEmailAndPassword(auth, loginEmail.trim(), password)
-      .then((result) => {
-        console.log('[DEBUG] Đăng nhập THÀNH CÔNG. User:', result.user);
-      })
-      .catch((err) => {
-        console.log('[DEBUG] Đăng nhập THẤT BẠI. Lỗi:', err);
+      .catch(() => {
         setAuthError(true);
       })
       .finally(() => {
