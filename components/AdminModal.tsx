@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
 import { 
   X, 
   Settings, 
@@ -64,7 +66,6 @@ interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
   isAuthenticated: boolean;
-  onAuthenticate: (status: boolean) => void;
   initialTab?: string;
   initialOpenAddFactory?: boolean;
   siteSettings: SiteSettings;
@@ -86,7 +87,6 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   isOpen,
   onClose,
   isAuthenticated,
-  onAuthenticate,
   initialTab = 'factories',
   initialOpenAddFactory = false,
   siteSettings,
@@ -103,10 +103,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   employerRequests,
   onDeleteEmployerRequest
 }) => {
+  const [loginEmail, setLoginEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>('factories');
   const [saveSuccessNotice, setSaveSuccessNotice] = useState<string | null>(null);
+  console.log('[DEBUG] AdminModal render. isAuthenticated =', isAuthenticated, 'isOpen =', isOpen);
 
   // Editable Site Settings clone
   const [editableSettings, setEditableSettings] = useState<SiteSettings>(siteSettings);
@@ -145,6 +148,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
   const [factoryImage, setFactoryImage] = useState('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop');
   const [factoryActive, setFactoryActive] = useState(true);
   const [factoryZalo, setFactoryZalo] = useState('https://zalo.me/0823166683');
+  const [factoryBenefits, setFactoryBenefits] = useState('');
+  const [factoryRequirements, setFactoryRequirements] = useState('');
+  const [factoryJobDescription, setFactoryJobDescription] = useState('');
 
   // Office edit state
   const [newOffice, setNewOffice] = useState({ region: '', address: '', hotline: '0823 166 683' });
@@ -246,12 +252,20 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === '123456' || password === 'admin' || password === 'vthnhanluc') {
-      onAuthenticate(true);
-      setAuthError(false);
-    } else {
-      setAuthError(true);
-    }
+    setAuthError(false);
+    setAuthLoading(true);
+    console.log('[DEBUG] Bắt đầu đăng nhập với email:', loginEmail.trim());
+    signInWithEmailAndPassword(auth, loginEmail.trim(), password)
+      .then((result) => {
+        console.log('[DEBUG] Đăng nhập THÀNH CÔNG. User:', result.user);
+      })
+      .catch((err) => {
+        console.log('[DEBUG] Đăng nhập THẤT BẠI. Lỗi:', err);
+        setAuthError(true);
+      })
+      .finally(() => {
+        setAuthLoading(false);
+      });
   };
 
   // Factory Handlers
@@ -273,6 +287,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     setFactoryImage('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop');
     setFactoryActive(true);
     setFactoryZalo('https://zalo.me/0823166683');
+    setFactoryBenefits('Bao ăn 2-3 bữa miễn phí\nCó ký túc xá máy lạnh wifi miễn phí\nĐóng BHXH đầy đủ theo luật');
+    setFactoryRequirements('Nam/Nữ 18-45 tuổi, sức khỏe tốt\nCó CMND/CCCD gắn chip\nKhông yêu cầu kinh nghiệm');
+    setFactoryJobDescription('Lắp ráp, kiểm tra ngoại quan sản phẩm\nĐóng gói thành phẩm vào thùng\nNgồi làm việc phòng máy lạnh mát mẻ');
     setIsAddingFactory(true);
   };
 
@@ -294,6 +311,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     setFactoryImage(f.image);
     setFactoryActive(f.active);
     setFactoryZalo(f.zaloUrl || 'https://zalo.me/0823166683');
+    setFactoryBenefits((f.benefits || []).join('\n'));
+    setFactoryRequirements((f.requirements || []).join('\n'));
+    setFactoryJobDescription((f.jobDescription || []).join('\n'));
     setIsAddingFactory(true);
   };
 
@@ -325,21 +345,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({
       active: factoryActive,
       order: existing ? existing.order : factories.length + 1,
       zaloUrl: factoryZalo,
-      benefits: existing?.benefits || [
-        'Bao ăn 2-3 bữa miễn phí',
-        'Có ký túc xá máy lạnh wifi miễn phí',
-        'Đóng BHXH đầy đủ theo luật'
-      ],
-      requirements: existing?.requirements || [
-        'Nam/Nữ 18-45 tuổi, sức khỏe tốt',
-        'Có CMND/CCCD gắn chip',
-        'Không yêu cầu kinh nghiệm'
-      ],
-      jobDescription: existing?.jobDescription || [
-        'Lắp ráp, kiểm tra ngoại quan sản phẩm',
-        'Đóng gói thành phẩm vào thùng',
-        'Ngồi làm việc phòng máy lạnh mát mẻ'
-      ],
+      benefits: factoryBenefits.split('\n').map((s) => s.trim()).filter(Boolean),
+      requirements: factoryRequirements.split('\n').map((s) => s.trim()).filter(Boolean),
+      jobDescription: factoryJobDescription.split('\n').map((s) => s.trim()).filter(Boolean),
       postedDate: existing?.postedDate || new Date().toISOString().split('T')[0]
     };
 
@@ -492,10 +500,18 @@ export const AdminModal: React.FC<AdminModalProps> = ({
             </div>
             <h3 className="text-2xl font-black text-slate-900">Đăng Nhập Quản Trị Viên</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Nhập mật khẩu để chỉnh sửa trực tiếp mọi thông số trên website (Mật khẩu mặc định: <strong className="text-slate-800 font-bold">123456</strong>)
+              Đăng nhập bằng tài khoản quản trị đã tạo trong Firebase Authentication.
             </p>
 
             <form onSubmit={handleLogin} className="space-y-3 pt-3">
+              <input
+                type="email"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="Email quản trị..."
+                className="w-full p-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-rose-500 focus:outline-none text-center font-bold"
+              />
               <input
                 type="password"
                 required
@@ -507,26 +523,16 @@ export const AdminModal: React.FC<AdminModalProps> = ({
 
               {authError && (
                 <div className="text-xs text-rose-600 font-bold">
-                  Mật khẩu không chính xác! Vui lòng thử lại.
+                  Email hoặc mật khẩu không chính xác! Vui lòng thử lại.
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm shadow-md transition"
+                disabled={authLoading}
+                className="w-full bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm shadow-md transition disabled:opacity-60"
               >
-                Mở Chế Độ Chỉnh Sửa Trực Tiếp
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  onAuthenticate(true);
-                  setAuthError(false);
-                }}
-                className="w-full text-xs text-slate-500 hover:text-rose-600 underline py-1 transition"
-              >
-                Đăng nhập nhanh 1-chạm (Dành cho Quản trị viên)
+                {authLoading ? 'Đang đăng nhập...' : 'Mở Chế Độ Chỉnh Sửa Trực Tiếp'}
               </button>
             </form>
           </div>
@@ -922,6 +928,47 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                               value={factoryZalo}
                               onChange={(e) => setFactoryZalo(e.target.value)}
                               placeholder="https://zalo.me/0823166683"
+                              className="w-full p-2.5 rounded-xl border border-slate-300"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Phúc Lợi (mỗi dòng là 1 mục, xuống dòng cho mục tiếp theo):
+                            </label>
+                            <textarea
+                              value={factoryBenefits}
+                              onChange={(e) => setFactoryBenefits(e.target.value)}
+                              rows={4}
+                              placeholder={'Bao ăn 2-3 bữa miễn phí\nCó ký túc xá máy lạnh wifi miễn phí\nĐóng BHXH đầy đủ theo luật'}
+                              className="w-full p-2.5 rounded-xl border border-slate-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Yêu Cầu Ứng Viên (mỗi dòng là 1 mục):
+                            </label>
+                            <textarea
+                              value={factoryRequirements}
+                              onChange={(e) => setFactoryRequirements(e.target.value)}
+                              rows={4}
+                              placeholder={'Nam/Nữ 18-45 tuổi, sức khỏe tốt\nCó CMND/CCCD gắn chip\nKhông yêu cầu kinh nghiệm'}
+                              className="w-full p-2.5 rounded-xl border border-slate-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-slate-700 mb-1">
+                              Mô Tả Công Việc (mỗi dòng là 1 mục):
+                            </label>
+                            <textarea
+                              value={factoryJobDescription}
+                              onChange={(e) => setFactoryJobDescription(e.target.value)}
+                              rows={4}
+                              placeholder={'Lắp ráp, kiểm tra ngoại quan sản phẩm\nĐóng gói thành phẩm vào thùng\nNgồi làm việc phòng máy lạnh mát mẻ'}
                               className="w-full p-2.5 rounded-xl border border-slate-300"
                             />
                           </div>
