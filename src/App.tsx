@@ -13,7 +13,8 @@ import {
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { AdminBar } from './components/AdminBar';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -64,26 +65,21 @@ export default function App() {
   // B2B Employer requests state
   const [employerRequests, setEmployerRequestsLocal] = useState<EmployerRequest[]>([]);
 
-  // Admin authentication state — vẫn lưu trên trình duyệt (mỗi người quản trị
-  // tự đăng nhập trên máy của mình, không cần chia sẻ giữa mọi người).
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('vth_admin_logged_in');
-      return saved === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Admin authentication state — giờ lấy từ Firebase Authentication thật
+  // (đăng nhập bằng email/mật khẩu đã tạo trong Firebase Console), không
+  // còn là mật khẩu viết cứng trong code hay tự lưu trong trình duyệt nữa.
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
 
   const [adminTab, setAdminTab] = useState<string>('factories');
 
   useEffect(() => {
-    try {
-      localStorage.setItem('vth_admin_logged_in', String(isAdminLoggedIn));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [isAdminLoggedIn]);
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      console.log('[DEBUG] onAuthStateChanged fired. user =', user);
+      setIsAdminLoggedIn(!!user);
+      console.log('[DEBUG] setIsAdminLoggedIn called with', !!user);
+    });
+    return () => unsubAuth();
+  }, []);
 
   // ---- Lắng nghe dữ liệu theo thời gian thực từ Firestore ----
   // Bất kỳ ai (kể cả admin trên điện thoại khác) thêm/sửa/xóa, tất cả
@@ -287,9 +283,8 @@ export default function App() {
       <AdminBar
         isAdminLoggedIn={isAdminLoggedIn}
         onOpenAdminTab={handleOpenAdminWithTab}
-        onLogout={() => setIsAdminLoggedIn(false)}
+        onLogout={() => signOut(auth)}
         onLogin={() => {
-          setIsAdminLoggedIn(true);
           setIsAdminModalOpen(true);
         }}
       />
@@ -485,7 +480,6 @@ export default function App() {
           setAdminOpenAddFactory(false);
         }}
         isAuthenticated={isAdminLoggedIn}
-        onAuthenticate={setIsAdminLoggedIn}
         initialTab={adminTab}
         initialOpenAddFactory={adminOpenAddFactory}
         siteSettings={siteSettings}
